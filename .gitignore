@@ -14,3 +14,5 @@
 /web/playwright-report/
 /web/test-results/
 /runner-data/
+
+/web/tsconfig.tsbuildinfo

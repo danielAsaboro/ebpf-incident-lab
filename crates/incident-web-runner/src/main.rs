@@ -100,8 +100,11 @@ struct SessionEvent {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 struct CreateSession {
     lab_id: String,
+    #[serde(default)]
+    scenario_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -143,6 +146,7 @@ fn app(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/v1/labs", get(list_labs))
+        .route("/v1/capabilities", get(capabilities))
         .route("/v1/sessions", post(create_session))
         .route("/v1/sessions/{id}", get(get_session))
         .route("/v1/sessions/{id}/events", get(session_events))
@@ -168,6 +172,15 @@ async fn list_labs(State(state): State<AppState>, headers: HeaderMap) -> Respons
     Json(labs()).into_response()
 }
 
+async fn capabilities(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    if !authorized(&state, &headers) { return unauthorized(); }
+    Json(serde_json::json!({"fileScenarios": ["baseline", "fallback", "relative"]})).into_response()
+}
+
+fn valid_scenario(lab: &str, scenario: &str) -> bool {
+    scenario == "baseline" || (lab == "02" && matches!(scenario, "fallback" | "relative"))
+}
+
 async fn create_session(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -189,6 +202,10 @@ async fn create_session(
             "lab_not_hosted",
             "Only Labs 01, 02, and 07 are hosted in this release.",
         );
+    }
+    let scenario = input.scenario_id.unwrap_or_else(|| "baseline".into());
+    if !valid_scenario(&input.lab_id, &scenario) {
+        return problem(StatusCode::BAD_REQUEST, "scenario_not_allowed", "This fixed scenario is not available for the requested lab.");
     }
     let id = Uuid::new_v4();
     let now = epoch();
@@ -249,7 +266,7 @@ async fn create_session(
     if let Err(error) = record_session(&state, &view, &requester).await {
         error!(%error, "failed to record session");
     }
-    tokio::spawn(run_session(state.clone(), id, input.lab_id));
+    tokio::spawn(run_session(state.clone(), id, input.lab_id, scenario));
     (StatusCode::ACCEPTED, Json(view)).into_response()
 }
 
@@ -371,7 +388,7 @@ async fn save_feedback(
     }
 }
 
-async fn run_session(state: AppState, id: Uuid, lab_id: String) {
+async fn run_session(state: AppState, id: Uuid, lab_id: String, scenario: String) {
     let permit = match state.gate.acquire().await {
         Ok(permit) => permit,
         Err(_) => return,
@@ -381,10 +398,10 @@ async fn run_session(state: AppState, id: Uuid, lab_id: String) {
         &state,
         id,
         "status",
-        "Runner acquired. Starting a bounded observation.".into(),
+        format!("Runner acquired. Starting fixed scenario: {scenario}."),
     )
     .await;
-    let result = timeout(SESSION_TIMEOUT, execute_lab(&state, id, &lab_id)).await;
+    let result = timeout(SESSION_TIMEOUT, execute_lab(&state, id, &lab_id, &scenario)).await;
     let (status, error_category, message) = match result {
         Ok(Ok(())) => (
             SessionStatus::Completed,
@@ -410,7 +427,7 @@ async fn run_session(state: AppState, id: Uuid, lab_id: String) {
     push_event(&state, id, "terminal", message.into()).await;
 }
 
-async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), String> {
+async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str, scenario: &str) -> Result<(), String> {
     let (binary, fixture) = match lab_id {
         "01" => ("01-exec-watch", Fixture::Exec),
         "02" => ("02-file-open", Fixture::File),
@@ -418,9 +435,9 @@ async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), Str
         _ => return Err("lab is not allowlisted".into()),
     };
     let mut paused = match fixture {
-        Fixture::Exec => Some(spawn_paused("exec", &state.config.fixture_dir).await?),
-        Fixture::File => Some(spawn_paused("file", &state.config.fixture_dir).await?),
-        Fixture::Write => Some(spawn_paused("write", &state.config.fixture_dir).await?),
+        Fixture::Exec => Some(spawn_paused("exec", &state.config.fixture_dir, "baseline").await?),
+        Fixture::File => Some(spawn_paused("file", &state.config.fixture_dir, scenario).await?),
+        Fixture::Write => Some(spawn_paused("write", &state.config.fixture_dir, "baseline").await?),
     };
     let mut command = Command::new(state.config.binary_dir.join(binary));
     command.arg("--json").arg("--duration").arg("3");
@@ -484,7 +501,7 @@ async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), Str
             if !status.success() {
                 return Err("failed to continue fixed fixture".into());
             }
-            child.wait().await.map_err(|e| e.to_string())?;
+            if !child.wait().await.map_err(|e| e.to_string())?.success() { return Err("fixed fixture failed".into()); }
         }
     }
     let status = observer
@@ -514,7 +531,8 @@ enum Fixture {
     Write,
 }
 
-async fn spawn_paused(kind: &str, fixture_dir: &Path) -> Result<Child, String> {
+async fn spawn_paused(kind: &str, fixture_dir: &Path, scenario: &str) -> Result<Child, String> {
+    if !valid_scenario(if kind == "file" { "02" } else { "01" }, scenario) { return Err("scenario not allowlisted".into()); }
     let (payload, fixture_binary) = match kind {
         "write" => ("echo verifier-hosted >/dev/null; sleep 0.2", None),
         "file" => (
@@ -527,6 +545,7 @@ async fn spawn_paused(kind: &str, fixture_dir: &Path) -> Result<Child, String> {
     command.arg("-c").arg(format!("kill -STOP $$; {payload}"));
     if let Some(path) = fixture_binary {
         command.env("FIXTURE_BIN", path);
+        command.env("INCIDENT_FILE_SCENARIO", scenario);
     }
     command
         .stdout(Stdio::null())
@@ -790,6 +809,22 @@ mod tests {
             );
         }
         builder.body(Body::from(body.to_string())).unwrap()
+    }
+
+    #[test]
+    fn scenarios_are_fixed_and_scoped_to_file_lab() {
+        assert!(valid_scenario("02", "fallback"));
+        assert!(valid_scenario("02", "relative"));
+        assert!(valid_scenario("01", "baseline"));
+        assert!(!valid_scenario("01", "fallback"));
+        assert!(!valid_scenario("02", "../../bin/sh"));
+        assert!(serde_json::from_str::<CreateSession>(r#"{"labId":"02","command":"whoami"}"#).is_err());
+    }
+
+    #[tokio::test]
+    async fn unsupported_scenario_does_not_queue_execution() {
+        let response = app(state(false)).oneshot(request(http::Method::POST, "/v1/sessions", r#"{"labId":"07","scenarioId":"relative"}"#, true)).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
     #[tokio::test]

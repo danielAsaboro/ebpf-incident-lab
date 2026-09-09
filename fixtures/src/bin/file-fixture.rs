@@ -7,6 +7,11 @@ use std::{
 use incident_fixtures::open_scenarios;
 
 fn main() -> io::Result<()> {
+    let scenario = std::env::var("INCIDENT_FILE_SCENARIO").unwrap_or_else(|_| "baseline".into());
+    if !matches!(scenario.as_str(), "baseline" | "fallback" | "relative") {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "unknown fixed file scenario"));
+    }
+    if scenario != "baseline" { return varied_scenario(&scenario); }
     let root = PathBuf::from(format!("/tmp/ebpf-incident-file-{}", std::process::id()));
     fs::create_dir_all(&root)?;
     let scenarios = open_scenarios(root.to_str().unwrap());
@@ -50,4 +55,40 @@ fn open_without_root_override(path: &Path) -> io::Result<fs::File> {
         return Err(io::Error::last_os_error());
     }
     result
+}
+
+// Reviewed, fixed workloads. No learner path or command is accepted.
+fn varied_scenario(scenario: &str) -> io::Result<()> {
+    let root = PathBuf::from(format!("/tmp/ebpf-incident-transfer-{}", std::process::id()));
+    fs::create_dir(&root)?;
+    let result = (|| -> io::Result<()> {
+        if scenario == "fallback" {
+            fs::write(root.join("default.conf"), b"mode=fallback\n")?;
+            let primary = fs::File::open(root.join("override.conf"));
+            println!("primary result={:?}", primary.as_ref().map(|_| "opened"));
+            if primary.is_err() {
+                let fallback = fs::File::open(root.join("default.conf"))?;
+                println!("fallback opened={:?}", fallback.metadata()?.len());
+            }
+        } else {
+            fs::create_dir(root.join("service-a"))?;
+            fs::create_dir(root.join("service-b"))?;
+            fs::write(root.join("service-a/settings.conf"), b"mode=a\n")?;
+            let original = std::env::current_dir()?;
+            let relative_result = (|| -> io::Result<()> {
+                std::env::set_current_dir(root.join("service-a"))?;
+                let a = fs::File::open("settings.conf");
+                println!("first relative attempt={:?}", a.as_ref().map(|_| "opened"));
+                std::env::set_current_dir(root.join("service-b"))?;
+                let b = fs::File::open("settings.conf");
+                println!("second relative attempt={:?}", b.as_ref().map(|_| "opened"));
+                Ok(())
+            })();
+            std::env::set_current_dir(original)?;
+            relative_result?;
+        }
+        Ok(())
+    })();
+    let cleanup = fs::remove_dir_all(&root);
+    result.and(cleanup)
 }
