@@ -37,4 +37,31 @@ Five added regression cases cover HTTP 400, 429, 500, a pending request, and a n
 
 - Cloudflare Access is deferred at the user's request; it is not configured or claimed. The current runner-token authentication remains in place.
 - The private operator-pilot protocol and blank session template are prepared under ignored `private-research/operator-pilot/`. No invitations, consented participant sessions, or feedback were fabricated or submitted.
-- Post-deployment verification of the changed UI is recorded below only after observation.
+- Publication of the readiness fixes is pending explicit approval; the production site still runs the earlier build.
+
+## Local production-build verification
+
+The optimized Next.js build was served at `http://localhost:3018`. A repeated
+DOM audit on Lab 07 at desktop and 390 × 844 reported no failures among
+the scoped contrast, field-label, title, language, main-landmark, and h1
+checks, and no page-width overflow. This confirms the contrast correction
+in the built UI, not the deployed UI. The viewport was restored.
+
+With no local runner credentials configured, Start real observation showed
+FAILED and the explicit unconfigured-runner message; Interpret remained
+disabled with zero observations. No successful run was claimed.
+
+Commit `67e4d1b` contains the reviewed readiness fixes. Automatic approval
+review rejected the attempted push to public main because explicit branch
+and publication authorization was missing. No push or deployment was
+performed after that rejection.
+
+## Deployed Lab 07 browser acceptance
+
+The existing production build at `https://ebpf-lab.danielasaboro.com/labs/07`
+emitted `verifier_demo`, syscall ID 1, PID/TGID 1029285, timestamp
+3119157534373143 at 14:32:43 UTC. Cleanup completed at 14:32:46 UTC.
+Prediction, observation, explanation, transfer, and Finish without feedback
+reached INCIDENT COMPLETE. Together with the earlier Lab 01 and Lab 02
+records, all three current hosted browser flows have been exercised.
+This does not verify the unpublished feedback and contrast fixes in production.
