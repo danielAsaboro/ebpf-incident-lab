@@ -28,3 +28,10 @@ Lab 02 initially filled the event buffer with unrelated host activity. The relea
 Vercel production alias `https://ebpf-incident-lab.vercel.app` created Lab 01 session `441d6ecb-548b-4d88-b731-2ecef98817f1`. Its SSE response contained one real `process_exec` observation for `/bin/sleep`, followed by `Observation completed and cleanup finished.`
 
 This proves one deployed end-to-end path. It does not prove external learner adoption, pedagogical effectiveness, universal kernel support, or production-scale capacity.
+
+## Isolation and failure handling
+
+- Concurrent sessions `b5fcd28c-3a86-4a58-96f6-efc64ea1eee2` and `214f34b9-475a-434e-b818-4ed28edb745c` proved one-active-job queueing. The first emitted only `process_exec`; the second emitted only `verifier_demo`; both completed and left no observer or fixture process.
+- Disconnect session `fc8a9580-293d-4aa9-9a16-06dd6b11d567` completed after its SSE client disconnected and left no child process.
+- Restart session `8a2f2f14-3672-4010-b66a-4f66eb9bff81` was interrupted by a service restart. Systemd killed the process group, and startup recovery persisted `failed|service_restart` rather than leaving a false running result.
+- The emergency switch returned HTTP 503 for a new session while disabled. Re-enabling it restored an explicit healthy response for runner version 0.1.1.

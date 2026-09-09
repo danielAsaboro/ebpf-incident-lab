@@ -1,4 +1,4 @@
-# v0.1.0 release provenance
+# v0.1.1 release provenance
 
 The learner bundle was built and smoke-tested in the project's Ubuntu 24.04 x86_64 Lima/QEMU environment on 2026-09-03. Its privileged acceptance record is in [`vm/acceptance/2026-09-03/README.md`](../vm/acceptance/2026-09-03/README.md).
 
@@ -13,7 +13,7 @@ Before release, the repository passed the Rust runner unit tests and Clippy with
 
 ## Clean-machine learner path
 
-Install Lima 2.0 or newer on macOS, clone this repository, download `incident-lab-x86_64.tar.zst` from the v0.1.0 release into `vm/artifacts/`, then verify it:
+Install Lima 2.0 or newer on macOS, clone this repository, download `incident-lab-x86_64.tar.zst` from the v0.1.1 release into `vm/artifacts/`, then verify it:
 
 ```bash
 cd vm/artifacts

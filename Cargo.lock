@@ -628,7 +628,7 @@ dependencies = [
 
 [[package]]
 name = "incident-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "serde",
@@ -637,7 +637,7 @@ dependencies = [
 
 [[package]]
 name = "incident-common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytemuck",
  "serde",
@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "incident-ebpf"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aya-ebpf",
  "incident-common",
@@ -654,14 +654,14 @@ dependencies = [
 
 [[package]]
 name = "incident-fixtures"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
 ]
 
 [[package]]
 name = "incident-labs"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bytemuck",
  "incident-cli",
@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "incident-runner"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "aya",
@@ -690,7 +690,7 @@ dependencies = [
 
 [[package]]
 name = "incident-web-runner"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "rusqlite",

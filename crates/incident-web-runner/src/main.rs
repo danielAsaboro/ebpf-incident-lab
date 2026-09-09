@@ -688,7 +688,15 @@ fn open_db() -> rusqlite::Result<Connection> {
     db.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=3000;
       CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY, lab_id TEXT NOT NULL, requester_hash TEXT NOT NULL, status TEXT NOT NULL, created_at INTEGER NOT NULL, started_at INTEGER, finished_at INTEGER, event_count INTEGER NOT NULL DEFAULT 0, error_category TEXT);
       CREATE TABLE IF NOT EXISTS feedback(id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, role TEXT NOT NULL, difficulty INTEGER NOT NULL, rating INTEGER NOT NULL, checkpoint_score INTEGER NOT NULL, comment TEXT NOT NULL, created_at INTEGER NOT NULL);")?;
+    recover_interrupted_sessions(&db, epoch())?;
     Ok(db)
+}
+
+fn recover_interrupted_sessions(db: &Connection, finished_at: u64) -> rusqlite::Result<usize> {
+    db.execute(
+        "UPDATE sessions SET status='failed', finished_at=?1, error_category='service_restart' WHERE status IN ('queued', 'running')",
+        params![finished_at],
+    )
 }
 
 async fn record_session(
@@ -910,6 +918,21 @@ mod tests {
         let session = sessions.get(&id).unwrap();
         assert_eq!(session.events.len(), MAX_EVENTS);
         assert_eq!(session.events.last().unwrap().kind, "terminal");
+    }
+
+    #[test]
+    fn startup_marks_interrupted_sessions_as_failed() {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("CREATE TABLE sessions(id TEXT PRIMARY KEY, lab_id TEXT, requester_hash TEXT, status TEXT, created_at INTEGER, started_at INTEGER, finished_at INTEGER, event_count INTEGER, error_category TEXT); INSERT INTO sessions(id, lab_id, requester_hash, status, created_at, event_count) VALUES ('one', '01', 'hash', 'running', 1, 2);").unwrap();
+        assert_eq!(recover_interrupted_sessions(&db, 99).unwrap(), 1);
+        let recovered: (String, u64, String) = db
+            .query_row(
+                "SELECT status, finished_at, error_category FROM sessions WHERE id='one'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(recovered, ("failed".into(), 99, "service_restart".into()));
     }
 
     #[test]
