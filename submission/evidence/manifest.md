@@ -12,3 +12,7 @@
 | Incident Lab improves diagnostic transfer | unknown | Requires baseline and changed-scenario results |
 | Labs 03–06 are browser hosted | incomplete | Six-month milestone; currently local-only |
 | Cloudflare Access protects the runner hostname | deferred by user | Access onboarding is skipped for now; Cloudflare Access is not configured or enforced |
+
+## Application-wide UI release
+
+The custom 3D collection, all seven lab routes, shared navigation, field guide and persistent notebooks are live on the existing custom domain. Fresh hosted runs for Labs 01, 02 and 07 completed through that domain after deployment. See [UI production deployment](2026-09-09-ui-production.md) (sanitized summary; raw telemetry retained locally). Local-lab pages do not change Labs 03–06 into hosted observers.
