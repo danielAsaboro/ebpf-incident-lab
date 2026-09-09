@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <main id="main" className="missing-page"><span className="micro">404 / OUTSIDE THE OBSERVATION WINDOW</span><h1>No incident<br/><em>at this address.</em></h1><p>Choose one of the seven investigations or return to your saved fieldwork.</p><div><Link className="button primary" href="/">All investigations →</Link><Link className="button secondary" href="/notebooks">My notebooks</Link></div></main>; }

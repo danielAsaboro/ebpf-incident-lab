@@ -1,0 +1,24 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { LocalLabExperience } from "./LocalLabExperience";
+import { labs } from "@/lib/labs";
+import { readNotebook } from "@/lib/notebooks";
+beforeEach(() => localStorage.clear());
+it("completes local reasoning without creating a hosted run or certifying pasted evidence", () => {
+  const transport = vi.spyOn(globalThis, "fetch");
+  render(<LocalLabExperience lab={labs[2]}/>);
+  fireEvent.change(screen.getByLabelText("Your prediction"), { target: { value: "Compare the destination and errno of each blocking connection." } });
+  fireEvent.click(screen.getByRole("button", { name: /open the run instructions/i }));
+  expect(screen.getByText("incident-lab run 03 --duration 10 --json")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText(/paste your local output/i), { target: { value: "User-provided result: destination=127.0.0.1 result=-111" } });
+  fireEvent.click(screen.getByRole("button", { name: /interpret your evidence/i }));
+  fireEvent.change(screen.getByLabelText("Your explanation"), { target: { value: "This reports a result for one blocking connect attempt, not ongoing service health." } });
+  fireEvent.click(screen.getByRole("button", { name: /test your understanding/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Completion is pending/i }));
+  fireEvent.click(screen.getByRole("button", { name: /finish this notebook/i }));
+  expect(screen.getByText("NOTEBOOK COMPLETE")).toBeInTheDocument();
+  expect(screen.getByText(/not an independently verified run/)).toBeInTheDocument();
+  expect(readNotebook("03")?.events).toEqual([]);
+  expect(readNotebook("03")?.source).toBe("local");
+  expect(transport).not.toHaveBeenCalled(); transport.mockRestore();
+});

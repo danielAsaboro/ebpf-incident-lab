@@ -46,22 +46,22 @@ export const labs: Lab[] = [
   {
     id: "03", slug: "connect-failures", title: "Why Can’t This Service Connect?", shortTitle: "Connect failures",
     symptom: "A client cannot connect, but the failure disappears inside generic application telemetry.", hook: "sys_enter_connect + sys_exit_connect", hosted: false, duration: "local lab",
-    predictionPrompt: "", explanationPrompt: "", transferPrompt: "", transferOptions: [], limits: [],
+    predictionPrompt: "Which destination, identity, return code and timing fields would distinguish a refused blocking connection from a successful one?", explanationPrompt: "Compare the successful and failed attempts. Explain why an EINPROGRESS return would require a different completion signal.", transferPrompt: "A non-blocking socket returns EINPROGRESS. What can you conclude?", transferOptions: [{ label: "The connection definitively failed", correct: false }, { label: "Completion is pending; correlate readiness or socket state", correct: true }, { label: "The destination is healthy", correct: false }], limits: ["A correlated blocking connect return establishes a result for that attempt.", "EINPROGRESS does not establish final success or failure."],
   },
   {
     id: "04", slug: "dns-latency", title: "Is DNS Actually the Slow Part?", shortTitle: "DNS latency",
     symptom: "A request is slow and DNS is suspected without a measured resolver boundary.", hook: "resolve_backend uprobe", hosted: false, duration: "local lab",
-    predictionPrompt: "", explanationPrompt: "", transferPrompt: "", transferOptions: [], limits: [],
+    predictionPrompt: "Which entry and return timestamps would bound time in resolve_backend, and what does the deliberate fixture delay change?", explanationPrompt: "Use the measured wrapper duration and explain which internal sources of delay remain unresolved.", transferPrompt: "The wrapper takes 500 ms. Does that prove the DNS server took 500 ms?", transferOptions: [{ label: "Yes, wrapper time equals DNS-server time", correct: false }, { label: "No; wrapper duration includes fixture delay and other resolver work", correct: true }, { label: "It proves all requests are slow", correct: false }], limits: ["The probes measure time spent inside this resolver wrapper.", "They do not isolate cache, NSS, network or DNS-server time."],
   },
   {
     id: "05", slug: "tcp-retransmits", title: "Why Does the Network Keep Retrying?", shortTitle: "TCP retransmits",
     symptom: "Latency coincides with packet loss, but averages hide the affected flows.", hook: "tcp/tcp_retransmit_skb", hosted: false, duration: "local lab",
-    predictionPrompt: "", explanationPrompt: "", transferPrompt: "", transferOptions: [], limits: [],
+    predictionPrompt: "Which flow identity and event counts would let you compare retransmissions during and outside the controlled loss window?", explanationPrompt: "Identify the affected flow and counts, then distinguish observed retransmissions from a claim about their cause.", transferPrompt: "The retransmit tracepoint fires. Which explanation is supported by that event alone?", transferOptions: [{ label: "The network dropped a packet", correct: false }, { label: "The kernel entered its retransmission path for this flow", correct: true }, { label: "The receiver is overloaded", correct: false }], limits: ["The tracepoint establishes a retransmission event for the recorded flow.", "It does not identify loss, reordering, receiver delay or congestion as the cause."],
   },
   {
     id: "06", slug: "namespace-pids", title: "Why Is PID 1 Not PID 1?", shortTitle: "Namespace identity",
     symptom: "Container and host process identifiers appear to contradict each other.", hook: "sys_enter_execve + /proc enrichment", hosted: false, duration: "local lab",
-    predictionPrompt: "", explanationPrompt: "", transferPrompt: "", transferOptions: [], limits: [],
+    predictionPrompt: "How will you correlate host PID, namespace-visible PID and cgroup ID without treating them as interchangeable?", explanationPrompt: "Describe the host and namespace identities you observed and what can be lost if the process exits before /proc enrichment.", transferPrompt: "The namespace reports PID 1. Which PID belongs in the observer filter?", transferOptions: [{ label: "Always 1", correct: false }, { label: "The process's host PID", correct: true }, { label: "The cgroup ID", correct: false }], limits: ["Host events and successful /proc enrichment can correlate PID views.", "Fast exit can prevent enrichment; a cgroup ID is not a container name."],
   },
   {
     id: "07", slug: "verifier-portability", title: "Reading Verifier Errors and Surviving Kernel Drift", shortTitle: "Verifier boundaries",

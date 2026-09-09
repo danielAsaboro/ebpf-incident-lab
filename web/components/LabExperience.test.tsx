@@ -87,3 +87,54 @@ describe("feedback submission", () => {
     expect(transport).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("evidence boundaries", () => {
+  it("shows an unavailable runner without inventing observations or allowing interpretation", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "The hosted runner is not configured." }), { status: 503 })));
+    render(<LabExperience lab={labs[0]} />);
+    fireEvent.change(screen.getByLabelText(/your prediction/i), { target: { value: "I expect an exec attempt with host PID and timestamp." } });
+    fireEvent.click(screen.getByRole("button", { name: /start real observation/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The hosted runner is not configured.");
+    expect(screen.getByRole("button", { name: /interpret 0 observations/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /return to prediction/i })).toBeEnabled();
+  });
+
+  it("allows inspecting a received event without losing its exact evidence", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "session-2", status: "queued" }))));
+    vi.stubGlobal("EventSource", RunnerStream);
+    render(<LabExperience lab={labs[0]} />);
+    fireEvent.change(screen.getByLabelText(/your prediction/i), { target: { value: "I expect an exec attempt with host PID and timestamp." } });
+    fireEvent.click(screen.getByRole("button", { name: /start real observation/i }));
+    await screen.findByText("queued");
+    act(() => RunnerStream.current.dispatchEvent(new MessageEvent("observation", { data: JSON.stringify({ sequence: 3, kind: "observation", timestamp: 1720000000, data: "pid=42 filename=/bin/sleep" }) })));
+    fireEvent.click(screen.getByRole("button", { name: /inspect observation 3/i }));
+    expect(screen.getByRole("region", { name: /selected evidence/i })).toHaveTextContent("pid=42 filename=/bin/sleep");
+  });
+});
+
+it("restores an interrupted hosted stream without automatically creating another run", async () => {
+  const { saveNotebook } = await import("@/lib/notebooks");
+  localStorage.clear();
+  saveNotebook({ labId: "01", source: "hosted", phase: "observe", prediction: "Look for an exec event with a host PID.", explanation: "", choice: null, events: [{ sequence: 1, kind: "observation", timestamp: 100, data: "pid=42" }], sessionId: "old-session", runState: "running", updatedAt: new Date().toISOString() });
+  const transport = vi.fn(); vi.stubGlobal("fetch", transport);
+  render(<LabExperience lab={labs[0]} persist/>);
+  expect(screen.getByText(/This saved stream was interrupted/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /interpret 1 observation/i })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /inspect observation 1/i })).toBeInTheDocument();
+  expect(transport).not.toHaveBeenCalled();
+  localStorage.clear();
+});
+
+it("does not complete a newer failed run when older feedback succeeds late", async () => {
+  const transport = await reachFeedback();
+  let finish!: (response: Response) => void;
+  transport.mockReturnValueOnce(new Promise<Response>(resolve => { finish = resolve; }));
+  fireEvent.click(screen.getByRole("button", { name: /save feedback and finish/i }));
+  fireEvent.click(screen.getByRole("button", { name: /predict$/i }));
+  transport.mockResolvedValueOnce(new Response(JSON.stringify({ message: "Runner unavailable for the new session." }), { status: 503 }));
+  fireEvent.click(screen.getByRole("button", { name: /start real observation/i }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Runner unavailable for the new session.");
+  await act(async () => finish(new Response("{}")));
+  expect(screen.queryByText("INCIDENT COMPLETE")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /interpret 0 observations/i })).toBeDisabled();
+});
