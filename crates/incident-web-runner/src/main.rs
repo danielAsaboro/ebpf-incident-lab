@@ -412,15 +412,15 @@ async fn run_session(state: AppState, id: Uuid, lab_id: String) {
 
 async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), String> {
     let (binary, fixture) = match lab_id {
-        "01" => ("01-exec-watch", Fixture::PausedExec),
-        "02" => ("02-file-open", Fixture::Binary("file-fixture")),
-        "07" => ("07-verifier-portability", Fixture::PausedWrite),
+        "01" => ("01-exec-watch", Fixture::Exec),
+        "02" => ("02-file-open", Fixture::File),
+        "07" => ("07-verifier-portability", Fixture::Write),
         _ => return Err("lab is not allowlisted".into()),
     };
     let mut paused = match fixture {
-        Fixture::PausedExec => Some(spawn_paused("exec").await?),
-        Fixture::PausedWrite => Some(spawn_paused("write").await?),
-        Fixture::Binary(_) => None,
+        Fixture::Exec => Some(spawn_paused("exec", &state.config.fixture_dir).await?),
+        Fixture::File => Some(spawn_paused("file", &state.config.fixture_dir).await?),
+        Fixture::Write => Some(spawn_paused("write", &state.config.fixture_dir).await?),
     };
     let mut command = Command::new(state.config.binary_dir.join(binary));
     command.arg("--json").arg("--duration").arg("3");
@@ -472,7 +472,7 @@ async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), Str
     .await
     .map_err(|_| "observer readiness timeout".to_string())??;
     match fixture {
-        Fixture::PausedExec | Fixture::PausedWrite => {
+        Fixture::Exec | Fixture::File | Fixture::Write => {
             let child = paused.as_mut().expect("paused fixture exists");
             let pid = child.id().ok_or("fixture PID unavailable")?;
             let status = Command::new("kill")
@@ -485,15 +485,6 @@ async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), Str
                 return Err("failed to continue fixed fixture".into());
             }
             child.wait().await.map_err(|e| e.to_string())?;
-        }
-        Fixture::Binary(name) => {
-            let status = Command::new(state.config.fixture_dir.join(name))
-                .status()
-                .await
-                .map_err(|e| format!("fixture: {e}"))?;
-            if !status.success() {
-                return Err("fixed fixture failed".into());
-            }
         }
     }
     let status = observer
@@ -518,20 +509,26 @@ async fn execute_lab(state: &AppState, id: Uuid, lab_id: &str) -> Result<(), Str
 }
 
 enum Fixture {
-    PausedExec,
-    PausedWrite,
-    Binary(&'static str),
+    Exec,
+    File,
+    Write,
 }
 
-async fn spawn_paused(kind: &str) -> Result<Child, String> {
-    let payload = if kind == "write" {
-        "echo verifier-hosted >/dev/null; sleep 0.2"
-    } else {
-        "exec /bin/sleep 0.2"
+async fn spawn_paused(kind: &str, fixture_dir: &Path) -> Result<Child, String> {
+    let (payload, fixture_binary) = match kind {
+        "write" => ("echo verifier-hosted >/dev/null; sleep 0.2", None),
+        "file" => (
+            "exec \"$FIXTURE_BIN\"",
+            Some(fixture_dir.join("file-fixture")),
+        ),
+        _ => ("exec /bin/sleep 0.2", None),
     };
-    Command::new("bash")
-        .arg("-c")
-        .arg(format!("kill -STOP $$; {payload}"))
+    let mut command = Command::new("bash");
+    command.arg("-c").arg(format!("kill -STOP $$; {payload}"));
+    if let Some(path) = fixture_binary {
+        command.env("FIXTURE_BIN", path);
+    }
+    command
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .kill_on_drop(true)
@@ -544,7 +541,12 @@ async fn push_event(state: &AppState, id: Uuid, kind: &'static str, data: String
     let Some(session) = sessions.get_mut(&id) else {
         return;
     };
-    if session.events.len() >= MAX_EVENTS {
+    let limit = if kind == "terminal" {
+        MAX_EVENTS
+    } else {
+        MAX_EVENTS - 1
+    };
+    if session.events.len() >= limit {
         return;
     }
     let event = SessionEvent {
@@ -875,6 +877,39 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::CONFLICT);
+    }
+
+    #[tokio::test]
+    async fn output_limit_always_reserves_the_terminal_event() {
+        let state = state(false);
+        let id = Uuid::new_v4();
+        let (tx, _) = broadcast::channel(MAX_EVENTS);
+        state.sessions.lock().await.insert(
+            id,
+            Session {
+                view: SessionView {
+                    id,
+                    lab_id: "02".into(),
+                    status: SessionStatus::Running,
+                    created_at: epoch(),
+                    started_at: Some(epoch()),
+                    finished_at: None,
+                    event_count: 0,
+                    error_category: None,
+                },
+                requester_hash: "test".into(),
+                events: Vec::new(),
+                tx,
+            },
+        );
+        for sequence in 0..(MAX_EVENTS + 10) {
+            push_event(&state, id, "observation", sequence.to_string()).await;
+        }
+        push_event(&state, id, "terminal", "completed".into()).await;
+        let sessions = state.sessions.lock().await;
+        let session = sessions.get(&id).unwrap();
+        assert_eq!(session.events.len(), MAX_EVENTS);
+        assert_eq!(session.events.last().unwrap().kind, "terminal");
     }
 
     #[test]

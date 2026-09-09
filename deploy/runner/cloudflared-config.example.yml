@@ -1,7 +1,7 @@
 tunnel: replace-with-tunnel-uuid
 credentials-file: /etc/cloudflared-ebpf-incident-lab/replace-with-tunnel-uuid.json
 ingress:
-  - hostname: runner.ebpf-lab.danielasaboro.com
+  - hostname: ebpf-runner.danielasaboro.com
     service: http://127.0.0.1:8787
     originRequest:
       connectTimeout: 5s

@@ -1,0 +1,29 @@
+[Unit]
+Description=Cloudflare Tunnel for eBPF Incident Lab
+After=network-online.target incident-web-runner.service
+Wants=network-online.target incident-web-runner.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared-ebpf-incident-lab/config.yml tunnel run
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

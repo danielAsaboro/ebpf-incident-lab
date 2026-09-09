@@ -17,7 +17,7 @@
   },
   "bundle": {
     "filename": "incident-lab-x86_64.tar.zst",
-    "url": null,
+    "url": "https://github.com/danielAsaboro/ebpf-incident-lab/releases/download/v0.1.0/incident-lab-x86_64.tar.zst",
     "sha256": "f96cdf3f47175f7d2cd024bb6f9269c02d169d536730b5740727a1600c8e91b2"
   },
   "developer": {

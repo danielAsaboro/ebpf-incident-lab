@@ -13,13 +13,13 @@ Incident Lab remains isolated from the existing Floatless workloads:
 - metrics: `/var/lib/ebpf-incident-lab/incident-lab.sqlite3`
 - service: `incident-web-runner.service`
 - loopback listener: `127.0.0.1:8787`
-- tunnel hostname: `runner.ebpf-lab.danielasaboro.com`
+- tunnel hostname: `ebpf-runner.danielasaboro.com`
 
 Port 8080 is already used on the shared host, so the runner must retain its dedicated port 8787. Do not alter the existing nginx configuration, public listeners, databases, or application services.
 
 ## Network boundary
 
-The API binds only to `127.0.0.1:8787`. Cloudflare Tunnel is the sole ingress. Protect `runner.ebpf-lab.danielasaboro.com` with a Cloudflare Access service-token policy and store the client ID and secret only in Vercel environment variables.
+The API binds only to `127.0.0.1:8787`. Cloudflare Tunnel is the sole ingress. Protect `ebpf-runner.danielasaboro.com` with a Cloudflare Access service-token policy and store the client ID and secret only in Vercel environment variables.
 
 No new inbound firewall rule or public port is needed. Cloudflare Tunnel uses outbound HTTPS.
 
