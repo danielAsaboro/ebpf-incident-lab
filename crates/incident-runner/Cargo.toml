@@ -1,0 +1,23 @@
+[package]
+name = "incident-runner"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[dependencies]
+anyhow.workspace = true
+bytemuck.workspace = true
+clap.workspace = true
+incident-cli = { path = "../incident-cli" }
+incident-common = { path = "../incident-common" }
+incident-labs = { path = "../incident-labs" }
+libc.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+aya.workspace = true
+
+[build-dependencies]
+anyhow.workspace = true
+aya-build.workspace = true
+cargo_metadata.workspace = true

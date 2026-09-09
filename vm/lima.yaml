@@ -1,0 +1,28 @@
+minimumLimaVersion: "2.0.0"
+vmType: qemu
+arch: x86_64
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-amd64.img"
+    arch: x86_64
+    digest: "sha256:ffe6203da54deeb6db5d2a98a83f9ec8e55f149d3f7ba622e1abe5fa966ee3d6"
+cpus: 2
+memory: "4GiB"
+disk: "20GiB"
+mounts:
+  - location: {{SOURCE_PATH}}
+    mountPoint: /mnt/incident-source
+    writable: false
+  - location: {{ARTIFACT_PATH}}
+    mountPoint: /mnt/incident-artifact
+    writable: false
+containerd:
+  system: false
+  user: false
+provision:
+  - mode: system
+    script: |
+      export INCIDENT_LAB_REPOSITORY_ID={{REPOSITORY_ID}}
+      export INCIDENT_LAB_MANIFEST_VERSION={{MANIFEST_VERSION}}
+      /mnt/incident-source/vm/guest/provision.sh
+message: |
+  eBPF Incident Lab is ready. Run: incident-lab help

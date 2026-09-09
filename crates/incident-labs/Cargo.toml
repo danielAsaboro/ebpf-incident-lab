@@ -1,0 +1,14 @@
+[package]
+name = "incident-labs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bytemuck.workspace = true
+incident-cli = { path = "../incident-cli" }
+incident-common = { path = "../incident-common" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+libc.workspace = true

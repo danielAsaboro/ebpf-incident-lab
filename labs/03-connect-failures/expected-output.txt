@@ -1,0 +1,2 @@
+{"timestamp_ns":1000000,"pid":12345,"tgid":12345,"uid":1000,"comm":"connect-fixtur","event_type":"connect","return_code":0,"latency_us":40,"destination_address":"127.0.0.1","destination_port":43210}
+{"timestamp_ns":1001000,"pid":12345,"tgid":12345,"uid":1000,"comm":"connect-fixtur","event_type":"connect","return_code":-111,"latency_us":22,"destination_address":"127.0.0.1","destination_port":43210}

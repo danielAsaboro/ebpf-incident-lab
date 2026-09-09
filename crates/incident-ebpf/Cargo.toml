@@ -1,0 +1,13 @@
+[package]
+name = "incident-ebpf"
+version.workspace = true
+edition.workspace = true
+license = "MIT OR GPL-2.0-only"
+
+[[bin]]
+name = "incident-ebpf"
+path = "src/main.rs"
+
+[dependencies]
+aya-ebpf = { workspace = true, default-features = false }
+incident-common = { path = "../incident-common", default-features = false }

@@ -1,0 +1,1 @@
+{"timestamp_ns":1000000,"pid":12345,"tgid":12345,"uid":1000,"comm":"dns-fixture","event_type":"dns_resolution","return_code":0,"latency_us":500123,"hostname":"localhost"}

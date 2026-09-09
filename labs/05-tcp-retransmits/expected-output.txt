@@ -1,0 +1,3 @@
+{"timestamp_ns":1000000,"pid":0,"tgid":0,"uid":0,"comm":"swapper/0","event_type":"tcp_retransmit","count":1,"source_address":"127.0.0.1","source_port":40000,"destination_address":"127.0.0.1","destination_port":18080}
+{"timestamp_ns":1000000,"pid":0,"tgid":0,"uid":0,"comm":"swapper/0","event_type":"tcp_retransmit_summary","retransmissions":1,"source_address":"127.0.0.1","source_port":40000,"destination_address":"127.0.0.1","destination_port":18080}
+{"timestamp_ns":1000000,"pid":0,"tgid":0,"uid":0,"comm":"swapper/0","event_type":"tcp_retransmit_histogram","flows_with_1":1,"flows_with_2_to_3":0,"flows_with_4_to_7":0,"flows_with_8_or_more":0}

@@ -1,0 +1,50 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/incident-common",
+    "crates/incident-cli",
+    "crates/incident-labs",
+    "crates/incident-ebpf",
+    "crates/incident-runner",
+    "fixtures",
+    "crates/incident-web-runner",
+]
+default-members = [
+    "crates/incident-common",
+    "crates/incident-cli",
+    "crates/incident-labs",
+    "fixtures",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+aya = "0.14.0"
+aya-build = "0.2.0"
+aya-ebpf = { version = "0.2.1", default-features = false }
+bytemuck = { version = "1.23", features = ["derive"] }
+cargo_metadata = "0.23"
+clap = { version = "4.5", features = ["derive"] }
+ctrlc = "3.4"
+libc = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+axum = "0.8"
+rusqlite = { version = "0.37", features = ["bundled"] }
+sha2 = "0.10"
+tokio = { version = "1.47", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tower-http = { version = "0.6", features = ["catch-panic", "limit", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "1.18", features = ["v4", "serde"] }
+
+[profile.release.package.incident-ebpf]
+debug = 2
+codegen-units = 1
+strip = false

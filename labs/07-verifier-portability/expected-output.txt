@@ -1,0 +1,3 @@
+{"timestamp_ns":1000000,"pid":12345,"tgid":12345,"uid":0,"comm":"echo","event_type":"verifier_demo","syscall_id":1,"message":"safe bounds-checked write observed"}
+
+When INCIDENT_VERIFIER_BROKEN=1, success means the command exits non-zero with a verifier load error. Exact instruction numbers differ by compiler and kernel.

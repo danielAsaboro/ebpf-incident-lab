@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "release_id": "vm-v1",
+  "instance_name": "ebpf-incident-lab",
+  "repository_id_namespace": "ebpf-incident-lab-vm-v1",
+  "guest": {
+    "architecture": "x86_64",
+    "minimum_kernel": "6.8",
+    "image_url": "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-amd64.img",
+    "image_sha256": "ffe6203da54deeb6db5d2a98a83f9ec8e55f149d3f7ba622e1abe5fa966ee3d6"
+  },
+  "lima": {
+    "minimum_version": "2.0.0",
+    "cpus": 2,
+    "memory": "4GiB",
+    "disk": "20GiB"
+  },
+  "bundle": {
+    "filename": "incident-lab-x86_64.tar.zst",
+    "url": null,
+    "sha256": "f96cdf3f47175f7d2cd024bb6f9269c02d169d536730b5740727a1600c8e91b2"
+  },
+  "developer": {
+    "rust_stable": "1.89.0",
+    "rust_nightly": "nightly-2025-08-01",
+    "bpf_linker": "0.9.15",
+    "provenance_command": "./scripts/test-all.sh && ./scripts/build.sh && sudo INCIDENT_SKIP_BUILD=1 ./scripts/smoke-linux.sh"
+  }
+}

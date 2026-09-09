@@ -1,0 +1,16 @@
+[package]
+name = "incident-common"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["user"]
+user = ["dep:serde"]
+
+[dependencies]
+bytemuck.workspace = true
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true

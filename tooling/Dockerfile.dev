@@ -1,0 +1,16 @@
+FROM ubuntu:24.04
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    binutils build-essential ca-certificates clang curl iproute2 libelf-dev llvm \
+    pkg-config python3 util-linux zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH=/root/.cargo/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && rustup toolchain install nightly --component rust-src \
+    && curl --proto '=https' --tlsv1.2 -LsSf \
+       https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh \
+       | bash \
+    && cargo binstall -y bpf-linker
+
+WORKDIR /workspace

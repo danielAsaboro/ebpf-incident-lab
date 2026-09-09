@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="${INCIDENT_LAB_ROOT:-/opt/incident-lab}"
+state_dir="${INCIDENT_LAB_STATE_DIR:-/var/lib/incident-lab}"
+tracefs_root="${INCIDENT_LAB_TRACEFS_ROOT:-/sys/kernel/tracing}"
+btf_path="${INCIDENT_LAB_BTF_PATH:-/sys/kernel/btf/vmlinux}"
+mounts_file="${INCIDENT_LAB_MOUNTS_FILE:-/proc/mounts}"
+source_dir="${INCIDENT_LAB_SOURCE_DIR:-/mnt/incident-source}"
+
+usage() {
+  cat <<'EOF'
+usage: incident-lab {help|doctor|list|run LAB [ARGS...]|test|sync|dev-setup}
+
+  doctor          verify the runtime kernel and artifact
+  list            list the seven incident labs
+  run LAB         run a lab by number or slug
+  test            run all semantic and adversarial scenarios
+  sync            refresh a clean native workspace from the read-only mount
+  dev-setup       install the optional pinned Rust/Aya build toolchain
+EOF
+}
+
+list_labs() {
+  cat <<'EOF'
+01  01-exec-watch
+02  02-file-open
+03  03-connect-failures
+04  04-dns-latency
+05  05-tcp-retransmits
+06  06-namespace-pids
+07  07-verifier-portability
+EOF
+}
+
+lab_slug() {
+  case "$1" in
+    01|01-exec-watch) printf 01-exec-watch ;;
+    02|02-file-open) printf 02-file-open ;;
+    03|03-connect-failures) printf 03-connect-failures ;;
+    04|04-dns-latency) printf 04-dns-latency ;;
+    05|05-tcp-retransmits) printf 05-tcp-retransmits ;;
+    06|06-namespace-pids) printf 06-namespace-pids ;;
+    07|07-verifier-portability) printf 07-verifier-portability ;;
+    *) printf 'incident-lab: unknown lab: %s\n' "$1" >&2; return 2 ;;
+  esac
+}
+
+require_provisioned() {
+  [ -r "$state_dir/provisioned.json" ] || {
+    printf 'incident-lab: provisioning incomplete; run ./scripts/lab-vm.sh doctor on the host\n' >&2
+    exit 1
+  }
+}
+
+check() {
+  local label="$1" remedy="$2"; shift 2
+  if "$@" >/dev/null 2>&1; then printf 'ok    %s\n' "$label"; else
+    printf 'FAIL  %s — %s\n' "$label" "$remedy" >&2
+    doctor_failures=$((doctor_failures + 1))
+  fi
+}
+kernel_supported() {
+  local major minor
+  IFS=. read -r major minor _ <<EOF
+$(uname -r)
+EOF
+  [ "$major" -gt 6 ] || { [ "$major" -eq 6 ] && [ "${minor:-0}" -ge 8 ]; }
+}
+system_readable() { test -r "$1" || sudo -n test -r "$1"; }
+tracefs_mounted() { awk -v path="$tracefs_root" '$2 == path && $3 == "tracefs" { found=1 } END { exit !found }' "$mounts_file"; }
+doctor() {
+  doctor_failures=0
+  printf 'eBPF Incident Lab learner environment\narchitecture: %s\nkernel:       %s\nworkspace:    %s\n' "$(uname -m)" "$(uname -r)" "$root"
+  check 'x86_64 architecture' 'recreate the pinned x86_64 VM' test "$(uname -m)" = x86_64
+  check 'kernel 6.8 or newer' 'boot the pinned Ubuntu 24.04 kernel' kernel_supported
+  check 'kernel BTF' 'use a kernel exposing /sys/kernel/btf/vmlinux' system_readable "$btf_path"
+  check 'tracefs mounted' 'mount tracefs at /sys/kernel/tracing' tracefs_mounted
+  check 'execve tracepoint' 'recreate the pinned VM' system_readable "$tracefs_root/events/syscalls/sys_enter_execve/format"
+  check 'native guest workspace' 'run incident-lab sync or reset the VM' test -x "$root/target/release/01-exec-watch"
+  check 'Python 3' 'reset the VM to reinstall runtime packages' command -v python3
+  check 'tc' 'reset the VM to reinstall iproute2' command -v tc
+  check 'unshare' 'reset the VM to reinstall util-linux' command -v unshare
+  if [ -r "$state_dir/provisioned.json" ]; then
+    python3 - "$state_dir/provisioned.json" <<'PY'
+import json, sys
+v=json.load(open(sys.argv[1]))
+print('artifact:     %s' % v.get('release_id','unknown'))
+print('sha256:       %s' % v.get('bundle_sha256','unknown'))
+PY
+  fi
+  [ "$doctor_failures" -eq 0 ]
+}
+
+sudo_prefix() {
+  if [ "${INCIDENT_LAB_SUDO+x}" = x ]; then printf '%s' "$INCIDENT_LAB_SUDO"
+  elif [ "$(id -u)" -eq 0 ]; then printf ''
+  else printf sudo
+  fi
+}
+
+run_lab() {
+  [ "$#" -ge 1 ] || { usage >&2; exit 2; }
+  require_provisioned
+  local slug elevate
+  slug="$(lab_slug "$1")"; shift
+  elevate="$(sudo_prefix)"
+  if [ -n "$elevate" ]; then exec "$elevate" "$root/scripts/run-lab.sh" "$slug" "$@"; fi
+  exec "$root/scripts/run-lab.sh" "$slug" "$@"
+}
+
+readiness() {
+  local observer fixture
+  readiness_out="$(mktemp)"; readiness_err="$(mktemp)"
+  readiness_observer=''; readiness_fixture=''
+  cleanup_readiness() {
+    if [ -n "${readiness_fixture:-}" ]; then kill -CONT "$readiness_fixture" 2>/dev/null || true; kill "$readiness_fixture" 2>/dev/null || true; fi
+    if [ -n "${readiness_observer:-}" ]; then kill "$readiness_observer" 2>/dev/null || true; fi
+    rm -f "${readiness_out:-}" "${readiness_err:-}"
+  }
+  preserve_readiness_failure() {
+    local failure_dir="$state_dir/failures/readiness-$(date +%Y%m%dT%H%M%S)"
+    mkdir -p "$failure_dir"
+    cp "$readiness_out" "$failure_dir/stdout.ndjson"
+    cp "$readiness_err" "$failure_dir/stderr.log"
+    printf 'incident-lab: readiness failed; artifacts preserved at %s\n' "$failure_dir" >&2
+  }
+  trap cleanup_readiness EXIT INT TERM
+  bash -c 'kill -STOP $$; exec /bin/sleep 0.2' & fixture=$!
+  readiness_fixture="$fixture"
+  "$root/target/release/01-exec-watch" --duration 3 --pid "$fixture" --json >"$readiness_out" 2>"$readiness_err" & observer=$!
+  readiness_observer="$observer"
+  local deadline=$((SECONDS + 10))
+  while ! grep -qi '^ready ' "$readiness_err"; do
+    kill -0 "$observer" 2>/dev/null || { wait "$observer" || true; preserve_readiness_failure; return 1; }
+    [ "$SECONDS" -lt "$deadline" ] || { preserve_readiness_failure; return 1; }
+    sleep 0.05
+  done
+  kill -CONT "$fixture"; wait "$fixture"; readiness_fixture=''
+  wait "$observer"; readiness_observer=''
+  python3 "$root/scripts/verify-smoke.py" 1 "$readiness_out" || { preserve_readiness_failure; return 1; }
+  cleanup_readiness
+  trap - EXIT INT TERM
+}
+
+sync_workspace() {
+  require_provisioned
+  local identity repository_id manifest_version expected_source actual_source
+  [ -r "$state_dir/source.sha256" ] || { printf 'incident-lab: source identity is missing; reset the VM\n' >&2; exit 1; }
+  expected_source="$(cat "$state_dir/source.sha256")"
+  actual_source="$(find "$root" -type f ! -path "$root/target/*" ! -path "$root/.git/*" -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+  [ "$actual_source" = "$expected_source" ] || {
+    printf 'incident-lab: workspace has local changes; preserve them manually or reset the VM\n' >&2
+    exit 1
+  }
+  identity="$(python3 - "$state_dir/owner.json" <<'PY'
+import json, sys
+v=json.load(open(sys.argv[1]))
+print(v['repository_id'])
+print(v['manifest_version'])
+PY
+)"
+  repository_id="$(printf '%s\n' "$identity" | sed -n '1p')"
+  manifest_version="$(printf '%s\n' "$identity" | sed -n '2p')"
+  [ -n "$repository_id" ] && [ -n "$manifest_version" ] || { printf 'incident-lab: invalid ownership marker\n' >&2; exit 1; }
+  exec sudo env INCIDENT_LAB_REPOSITORY_ID="$repository_id" \
+    INCIDENT_LAB_MANIFEST_VERSION="$manifest_version" "$source_dir/vm/guest/provision.sh" --sync
+}
+
+case "${1:-help}" in
+  help|-h|--help) usage ;;
+  list) list_labs ;;
+  doctor) doctor ;;
+  run) shift; run_lab "$@" ;;
+  test) require_provisioned; cd "$root"; exec sudo env INCIDENT_SKIP_BUILD=1 ./scripts/smoke-linux.sh ;;
+  sync) sync_workspace ;;
+  dev-setup) exec sudo "$source_dir/vm/guest/provision.sh" --dev-setup ;;
+  _readiness) readiness ;;
+  *) usage >&2; exit 2 ;;
+esac

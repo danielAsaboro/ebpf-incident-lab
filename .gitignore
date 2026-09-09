@@ -1,0 +1,16 @@
+/target/
+/target-linux/
+**/__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.DS_Store
+/vm/artifacts/*
+!/vm/artifacts/.gitkeep
+/private-research/
+/web/node_modules/
+/web/.next/
+/web/playwright-report/
+/web/test-results/
+/runner-data/

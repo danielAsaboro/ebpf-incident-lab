@@ -1,0 +1,2 @@
+EVENT                PID    TGID     UID COMMAND          DETAILS
+process_exec        12345   12345       0 bash             parent_pid=12000 filename=/bin/sleep

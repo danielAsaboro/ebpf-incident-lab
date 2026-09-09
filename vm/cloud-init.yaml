@@ -1,0 +1,14 @@
+# Provider-neutral package baseline for future adapters. Lima v1 uses the
+# equivalent idempotent package phase in vm/guest/provision.sh.
+package_update: true
+packages:
+  - binutils
+  - ca-certificates
+  - iproute2
+  - jq
+  - python3
+  - rsync
+  - util-linux
+  - zstd
+runcmd:
+  - [mount, -t, tracefs, tracefs, /sys/kernel/tracing]

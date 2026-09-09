@@ -1,0 +1,2 @@
+{"timestamp_ns":1000000,"pid":12345,"tgid":12345,"uid":0,"comm":"file-fixture","event_type":"file_open","return_code":-2,"latency_us":8,"flags":524288,"path":"/tmp/ebpf-incident-file-12345/missing.conf"}
+{"timestamp_ns":1001000,"pid":12345,"tgid":12345,"uid":65534,"comm":"file-fixture","event_type":"file_open","return_code":-13,"latency_us":5,"flags":524288,"path":"/tmp/ebpf-incident-file-12345/private.conf"}

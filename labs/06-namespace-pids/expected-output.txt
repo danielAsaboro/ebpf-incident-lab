@@ -1,0 +1,1 @@
+{"timestamp_ns":1000000,"pid":24500,"tgid":24500,"uid":0,"comm":"unshare","event_type":"namespace_exec","host_pid":24500,"namespace_pid":1,"cgroup_id":1234,"parent_pid":24400,"filename":"./target/release/namespace-fixture"}
