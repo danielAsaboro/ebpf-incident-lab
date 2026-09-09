@@ -13,12 +13,14 @@ Before release, the repository passed the Rust runner unit tests and Clippy with
 
 ## Clean-machine learner path
 
-Install Lima 2.0 or newer on macOS, clone this repository, download `incident-lab-x86_64.tar.zst` from the v0.1.1 release into `vm/artifacts/`, then verify it:
+Install Lima 2.0 or newer on macOS, clone this repository, download `incident-lab-x86_64.tar.zst` from the [v0.1.1 release](https://github.com/danielAsaboro/ebpf-incident-lab/releases/tag/v0.1.1) into `vm/artifacts/`, then verify it:
 
 ```bash
-cd vm/artifacts
-sha256sum --check ../../release/SHA256SUMS --ignore-missing
-cd ../..
+(
+  cd vm/artifacts
+  awk '$2 == "incident-lab-x86_64.tar.zst"' ../../release/SHA256SUMS |
+    shasum -a 256 --check
+)
 ./scripts/lab-vm.sh start
 ./scripts/lab-vm.sh doctor
 ./scripts/lab-vm.sh shell

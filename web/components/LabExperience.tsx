@@ -16,6 +16,9 @@ export function LabExperience({ lab }: { lab: Lab }) {
   const [sessionId, setSessionId] = useState<string>();
   const [runState, setRunState] = useState("idle");
   const [error, setError] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackPending, setFeedbackPending] = useState(false);
+  const feedbackPendingRef = useRef(false);
   const sourceRef = useRef<EventSource | null>(null);
   const steps: Phase[] = ["predict", "observe", "explain", "transfer", "complete"];
   const stepIndex = steps.indexOf(phase);
@@ -47,10 +50,26 @@ export function LabExperience({ lab }: { lab: Lab }) {
   const correct = choice !== null && lab.transferOptions[choice]?.correct;
 
   async function sendFeedback(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!sessionId) return;
+    event.preventDefault(); if (!sessionId || feedbackPendingRef.current) return;
     const data = new FormData(event.currentTarget);
-    await fetch(`/api/runner/v1/sessions/${sessionId}/feedback`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ role:data.get("role"), difficulty:Number(data.get("difficulty")), rating:Number(data.get("rating")), checkpointScore:correct ? 2 : 1, comment:data.get("comment") || null, consent:data.get("consent") === "on" }) });
-    setPhase("complete");
+    feedbackPendingRef.current = true;
+    setFeedbackPending(true);
+    setFeedbackError("");
+    try {
+      const response = await fetch(`/api/runner/v1/sessions/${sessionId}/feedback`, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ role:data.get("role"), difficulty:Number(data.get("difficulty")), rating:Number(data.get("rating")), checkpointScore:correct ? 2 : 1, comment:data.get("comment") || null, consent:data.get("consent") === "on" }) });
+      if (!response.ok) {
+        setFeedbackError(response.status === 429
+          ? "Feedback was not saved because too many requests were sent. Wait a moment and try again, or finish without feedback."
+          : "Feedback was not saved. Try again, or finish without feedback.");
+        return;
+      }
+      setPhase("complete");
+    } catch {
+      setFeedbackError("We could not confirm that your feedback was saved. Check your connection and try again, or finish without feedback.");
+    } finally {
+      feedbackPendingRef.current = false;
+      setFeedbackPending(false);
+    }
   }
 
   return <div className="experience shell">
@@ -64,7 +83,7 @@ export function LabExperience({ lab }: { lab: Lab }) {
 
       {phase === "explain" && <form className="panel" onSubmit={submitExplanation}><p className="kicker">03 · EXPLAIN + BOUND</p><h2>What did the evidence establish?</h2><p>{lab.explanationPrompt}</p><div className="limits">{lab.limits.map((limit, i) => <p key={limit}><span>{i === 0 ? "PROVES" : "DOES NOT PROVE"}</span>{limit}</p>)}</div><label htmlFor="explanation">Your explanation</label><textarea id="explanation" value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={5} placeholder="The event establishes… It cannot establish…" /><button className="button primary" disabled={explanation.trim().length < 30}>Continue to transfer</button></form>}
 
-      {phase === "transfer" && <div className="panel"><p className="kicker">04 · TRANSFER</p><h2>The incident changed</h2><p>{lab.transferPrompt}</p><div className="choices">{lab.transferOptions.map((option, index) => <button key={option.label} className={choice === index ? "choice selected" : "choice"} onClick={() => setChoice(index)}><span>{String.fromCharCode(65 + index)}</span>{option.label}</button>)}</div>{choice !== null && <div className={correct ? "result correct" : "result retry"}>{correct ? "Supported. That preserves the strongest evidence boundary." : "Reconsider which field remains attributable at the kernel event boundary."}</div>}{correct && <form className="feedback" onSubmit={sendFeedback}><h3>Optional, consented feedback</h3><div className="feedback-grid"><label>Role<select name="role" defaultValue="devops"><option value="devops">DevOps engineer</option><option value="sre">SRE</option><option value="systems">Systems engineer</option><option value="platform">Platform engineer</option><option value="other">Other</option></select></label><label>Difficulty<select name="difficulty" defaultValue="3">{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></label><label>Rating<select name="rating" defaultValue="4">{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></label></div><label>Comment<textarea name="comment" maxLength={1000} rows={3} /></label><label className="consent"><input required type="checkbox" name="consent" /> I consent to storing this feedback without my name, employer, or terminal contents.</label><button className="button primary">Save feedback and finish</button><button className="button secondary" type="button" onClick={() => setPhase("complete")}>Finish without feedback</button></form>}</div>}
+      {phase === "transfer" && <div className="panel"><p className="kicker">04 · TRANSFER</p><h2>The incident changed</h2><p>{lab.transferPrompt}</p><div className="choices">{lab.transferOptions.map((option, index) => <button key={option.label} className={choice === index ? "choice selected" : "choice"} onClick={() => setChoice(index)}><span>{String.fromCharCode(65 + index)}</span>{option.label}</button>)}</div>{choice !== null && <div className={correct ? "result correct" : "result retry"}>{correct ? "Supported. That preserves the strongest evidence boundary." : "Reconsider which field remains attributable at the kernel event boundary."}</div>}{correct && <form className="feedback" onSubmit={sendFeedback}><h3>Optional, consented feedback</h3><div className="feedback-grid"><label>Role<select name="role" defaultValue="devops"><option value="devops">DevOps engineer</option><option value="sre">SRE</option><option value="systems">Systems engineer</option><option value="platform">Platform engineer</option><option value="other">Other</option></select></label><label>Difficulty<select name="difficulty" defaultValue="3">{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></label><label>Rating<select name="rating" defaultValue="4">{[1,2,3,4,5].map(n=><option key={n}>{n}</option>)}</select></label></div><label>Comment<textarea name="comment" maxLength={1000} rows={3} /></label><label className="consent"><input required type="checkbox" name="consent" /> I consent to storing this feedback without my name, employer, or terminal contents.</label><div role="status">{feedbackPending ? "Saving feedback…" : ""}</div>{feedbackError && <div className="error" role="alert">{feedbackError}</div>}<button className="button primary" disabled={feedbackPending}>Save feedback and finish</button><button className="button secondary" type="button" onClick={() => setPhase("complete")}>Finish without feedback</button></form>}</div>}
 
       {phase === "complete" && <div className="panel completion"><div className="completion-mark">✓</div><p className="kicker">INCIDENT COMPLETE</p><h2>You followed the evidence to its boundary.</h2><p>The result belongs to this Ubuntu runner, this program, and this observation window. Transfer begins by preserving that scope.</p><Link className="button primary" href="/#labs">Choose another incident</Link></div>}
     </section>

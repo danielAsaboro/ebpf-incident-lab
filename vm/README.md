@@ -2,13 +2,29 @@
 
 Version one supports a macOS host with Lima 2.0 or newer and the pinned
 Ubuntu 24.04 x86_64 guest. Apple Silicon uses QEMU emulation. Linux and Windows
-hosts, ARM64 guests, and browser-hosted labs are not supported by this release.
+hosts and ARM64 guests are not supported by this local VM release. Hosted Labs
+01, 02, and 07 are available at [ebpf-lab.danielasaboro.com](https://ebpf-lab.danielasaboro.com);
+Labs 03–06 currently run locally.
 
 ## Learner setup
 
-No public bundle URL exists yet. Obtain the matching bundle from a maintainer
-and place it at `vm/artifacts/incident-lab-x86_64.tar.zst`. The launcher
-verifies it against `vm/manifest.json` and never falls back to compiling.
+Download the checksum-pinned [v0.1.1 learner bundle](https://github.com/danielAsaboro/ebpf-incident-lab/releases/tag/v0.1.1)
+from the repository root. The launcher requires this local file, verifies it
+against `vm/manifest.json`, and never falls back to downloading or compiling.
+
+```bash
+mkdir -p vm/artifacts
+curl --fail --location \
+  https://github.com/danielAsaboro/ebpf-incident-lab/releases/download/v0.1.1/incident-lab-x86_64.tar.zst \
+  --output vm/artifacts/incident-lab-x86_64.tar.zst
+(
+  cd vm/artifacts
+  awk '$2 == "incident-lab-x86_64.tar.zst"' ../../release/SHA256SUMS |
+    shasum -a 256 --check
+)
+```
+
+Then start the VM:
 
 ```bash
 ./scripts/lab-vm.sh start
@@ -53,7 +69,7 @@ native storage, and was packed deterministically. SHA-256:
 f96cdf3f47175f7d2cd024bb6f9269c02d169d536730b5740727a1600c8e91b2
 ```
 
-The public URL remains `null` in the manifest. Publishing a replacement requires
+The manifest pins the public v0.1.1 bundle URL and SHA-256. Publishing a replacement requires
 source reconciliation, x86-64 ELF inspection, Lab 7 relocation verification,
 privileged semantic smoke, deterministic packing, fresh extraction, and digest
 verification.

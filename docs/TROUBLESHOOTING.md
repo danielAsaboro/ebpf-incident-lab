@@ -8,8 +8,9 @@ Other host operating systems are not claimed.
 ## `learner bundle missing` or `learner bundle checksum mismatch`
 
 Place the exact x86_64 archive at
-`vm/artifacts/incident-lab-x86_64.tar.zst`. There is no public bundle URL yet,
-and the launcher will neither download nor silently rebuild it.
+`vm/artifacts/incident-lab-x86_64.tar.zst` using the public v0.1.1 download and
+checksum instructions in the [VM guide](../vm/README.md). The launcher will
+neither download nor silently rebuild it.
 
 ## `instance ... is not owned by this repository`
 

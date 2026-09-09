@@ -4,7 +4,7 @@ Seven incident-first Linux observability labs built with Rust and [Aya](https://
 
 This repository is the product behind **eBPF Incident Lab: Debugging Linux with Rust and Aya**. The runnable labs were validated before writing the complete [article-first season scripts](content/ebpf-incident-lab/README.md).
 
-The public learning application is designed for `https://ebpf-lab.danielasaboro.com`. Its source lives in [`web/`](web/), while the fixed-operation service for hosted Labs 01, 02, and 07 lives in [`crates/incident-web-runner/`](crates/incident-web-runner/). A source tree or local build does not prove those endpoints are deployed; current deployment evidence is tracked in [`submission/evidence/manifest.md`](submission/evidence/manifest.md).
+The public learning application is available at [ebpf-lab.danielasaboro.com](https://ebpf-lab.danielasaboro.com). Its source lives in [`web/`](web/), while the fixed-operation service for hosted Labs 01, 02, and 07 lives in [`crates/incident-web-runner/`](crates/incident-web-runner/). Hosted Labs 01, 02, and 07 have returned real observations through the Vercel API; current deployment evidence is tracked in [`submission/evidence/manifest.md`](submission/evidence/manifest.md).
 
 ## What works today
 
@@ -35,7 +35,7 @@ The kernel program only collects evidence. It does not block operations, alter p
 ## Recommended quick start on macOS
 
 Version one uses Lima 2.0 or newer and a checksum-verified local learner bundle.
-No public bundle URL exists yet. See the [local VM guide](vm/README.md), then run:
+Download the checksum-pinned v0.1.1 learner bundle using the [local VM guide](vm/README.md), then run:
 
 ```bash
 ./scripts/lab-vm.sh start
@@ -90,6 +90,8 @@ See [Getting started](docs/GETTING-STARTED.md) for learner and contributor paths
 
 The implementation record, including invalid assumptions and corrections, is in [BUILD-JOURNAL.md](BUILD-JOURNAL.md).
 Research provenance and source links are collected in [docs/RESEARCH.md](docs/RESEARCH.md).
+
+To report a reproducible problem or propose a reviewed lab improvement, see [Contributing](CONTRIBUTING.md).
 
 ## License
 

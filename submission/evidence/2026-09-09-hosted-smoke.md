@@ -35,3 +35,48 @@ This proves one deployed end-to-end path. It does not prove external learner ado
 - Disconnect session `fc8a9580-293d-4aa9-9a16-06dd6b11d567` completed after its SSE client disconnected and left no child process.
 - Restart session `8a2f2f14-3672-4010-b66a-4f66eb9bff81` was interrupted by a service restart. Systemd killed the process group, and startup recovery persisted `failed|service_restart` rather than leaving a false running result.
 - The emergency switch returned HTTP 503 for a new session while disabled. Re-enabling it restored an explicit healthy response for runner version 0.1.1.
+
+## Independent Vercel API recheck
+
+Checked at 2026-09-09T13:17:53.505983+00:00. Requests used the public Vercel proxy with no runner credential supplied by the client. Lab 02 replays the session created during this check; Lab 07 uses a fresh session. The SSE reader stops on the terminal event, matching the browser client.
+
+| Lab | Session | Observations | Terminal result |
+|---|---|---:|---|
+| 02 | `e4dfb386-a6ff-4a2d-9447-0057f210969a` | 10 | completed; cleanup finished |
+| 07 | `a15ca480-1dac-4d3f-b530-a94e8631a09f` | 1 | completed; cleanup finished |
+
+Raw event receipts: [Vercel recheck](2026-09-09-vercel-recheck.json). These are automated deployment checks, not independent learner sessions or browser usability acceptance. Combined with the earlier Lab 01 record, all three hosted lab APIs have produced observations through Vercel.
+
+## Custom-domain activation and browser acceptance
+
+On 2026-09-09, Cloudflare DNS was configured with the DNS-only CNAME
+`ebpf-lab.danielasaboro.com` → `a309dfd4a5b8df90.vercel-dns-017.com`
+(TTL Auto). Public DNS resolved the target; the Vercel project-domain API
+reported `verified: true`, and the configuration API reported
+`misconfigured: false` with no conflicts. Vercel's dashboard displayed
+Valid Configuration / Production.
+
+An HTTPS request from the Hetzner host returned HTTP 200. The first local
+connection closed during activation; a subsequent Chrome reload rendered
+the application over HTTPS without a warning or sign-in requirement.
+
+Browser acceptance on `https://ebpf-lab.danielasaboro.com/labs/01` completed
+predict → observe → explain → transfer → complete. The observation at
+14:21:11 UTC had `event_type: process_exec`, `filename: /bin/sleep`,
+PID/TGID `1029159`, and `timestamp_ns: 3118465962601839`. At 14:21:14 UTC
+the terminal event reported completed observation and cleanup. The
+interpret button enabled only after evidence arrived. The supported
+transfer answer advanced to optional feedback; Finish without feedback
+reached the completion page. No feedback or independent-learner outcome
+was submitted or claimed.
+
+### Remaining Access activation gate
+
+Cloudflare One redirected this account to Zero Trust onboarding. Selecting
+the Free plan exposed a checkout requiring billing details, acceptance of
+terms, and authorization for monthly usage beyond free limits. No billing
+data, agreement checkbox, or activation was submitted. The checkout was
+left open for the account owner. The service-token policy and Vercel
+`CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` remain unconfigured.
+The existing runner-token check remains the current API authentication
+boundary; do not claim Cloudflare Access enforcement.

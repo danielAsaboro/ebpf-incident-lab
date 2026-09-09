@@ -3,8 +3,8 @@
 ## Recommended macOS learner path
 
 Use the tested [Lima VM](../vm/README.md): macOS, Lima 2.0 or newer, and the
-pinned x86_64 Ubuntu 24.04 image. A checksum-matching local bundle is required
-because no public release asset has been published.
+pinned x86_64 Ubuntu 24.04 image. Download the checksum-pinned v0.1.1 learner
+bundle using the VM guide before starting.
 
 ```bash
 ./scripts/lab-vm.sh start
