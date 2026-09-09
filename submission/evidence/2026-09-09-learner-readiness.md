@@ -37,7 +37,7 @@ Five added regression cases cover HTTP 400, 429, 500, a pending request, and a n
 
 - Cloudflare Access is deferred at the user's request; it is not configured or claimed. The current runner-token authentication remains in place.
 - The private operator-pilot protocol and blank session template are prepared under ignored `private-research/operator-pilot/`. No invitations, consented participant sessions, or feedback were fabricated or submitted.
-- Publication of the readiness fixes is pending explicit approval; the production site still runs the earlier build.
+- Publication was explicitly approved and completed; see the production verification below.
 
 ## Local production-build verification
 
@@ -64,4 +64,30 @@ emitted `verifier_demo`, syscall ID 1, PID/TGID 1029285, timestamp
 Prediction, observation, explanation, transfer, and Finish without feedback
 reached INCIDENT COMPLETE. Together with the earlier Lab 01 and Lab 02
 records, all three current hosted browser flows have been exercised.
-This does not verify the unpublished feedback and contrast fixes in production.
+That browser run preceded publication of the feedback and contrast fixes; the later deployment check is recorded below.
+
+## Approved production publication
+
+The user explicitly approved pushing to public main and deploying to Vercel.
+Source commit `a1147a9` was pushed and deployed as
+`dpl_7frHY9YuEce3Jvfodgr9j6YfXs3j`, READY in production and aliased to
+`https://ebpf-lab.danielasaboro.com`. The earlier approval block is resolved.
+
+At 2026-09-09T14:40:46.541017+00:00, the homepage returned HTTP 200 and
+the runner health reported release 0.1.1, status ok. All three hosted lab
+APIs returned correctly typed real observations and cleanup completion:
+
+| Lab | Session | Observations |
+|---|---|---:|
+| 01 | `21687cf8-bb30-4468-b4d7-8a26622b21d0` | 1 |
+| 02 | `7d2b5d54-befa-4b3d-bb31-248f435b1cbc` | 10 |
+| 07 | `41dd2389-f801-4498-8bb8-49f0c9511e70` | 1 |
+
+[Raw production receipts](2026-09-09-production-readiness.json) retain these
+events. A fresh browser DOM audit of deployed Lab 01 reported no failures
+within the scoped text-contrast and semantic-label checks, confirming the
+contrast change is live. Feedback failure handling is covered by the seven
+passing web tests; no artificial learner feedback was submitted to production.
+
+Cloudflare Access remains deferred. Independent learner sessions remain
+outstanding and are not represented by these automated checks.

@@ -1,0 +1,134 @@
+{
+  "checkedAt": "2026-09-09T14:40:46.541017+00:00",
+  "deployment": "dpl_7frHY9YuEce3Jvfodgr9j6YfXs3j",
+  "sourceCommit": "a1147a9",
+  "base": "https://ebpf-lab.danielasaboro.com",
+  "results": [
+    {
+      "lab": "01",
+      "sessionId": "21687cf8-bb30-4468-b4d7-8a26622b21d0",
+      "events": [
+        {
+          "sequence": 1,
+          "kind": "status",
+          "timestamp": 1788964825,
+          "data": "Runner acquired. Starting a bounded observation."
+        },
+        {
+          "sequence": 2,
+          "kind": "observation",
+          "timestamp": 1788964825,
+          "data": "{\"timestamp_ns\":3119620061598006,\"pid\":1029379,\"tgid\":1029379,\"uid\":0,\"comm\":\"bash\",\"event_type\":\"process_exec\",\"parent_pid\":1028148,\"filename\":\"/bin/sleep\"}"
+        },
+        {
+          "sequence": 3,
+          "kind": "terminal",
+          "timestamp": 1788964828,
+          "data": "Observation completed and cleanup finished."
+        }
+      ]
+    },
+    {
+      "lab": "02",
+      "sessionId": "7d2b5d54-befa-4b3d-bb31-248f435b1cbc",
+      "events": [
+        {
+          "sequence": 1,
+          "kind": "status",
+          "timestamp": 1788964833,
+          "data": "Runner acquired. Starting a bounded observation."
+        },
+        {
+          "sequence": 2,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627797759394,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":15,\"flags\":524288,\"path\":\"/etc/ld.so.cache\"}"
+        },
+        {
+          "sequence": 3,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627797815415,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":9,\"flags\":524288,\"path\":\"/lib/x86_64-linux-gnu/libgcc_s.so.1\"}"
+        },
+        {
+          "sequence": 4,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627797926362,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":8,\"flags\":524288,\"path\":\"/lib/x86_64-linux-gnu/libc.so.6\"}"
+        },
+        {
+          "sequence": 5,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627798666801,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":42,\"flags\":524288,\"path\":\"/proc/self/maps\"}"
+        },
+        {
+          "sequence": 6,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799152051,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":30,\"flags\":524865,\"path\":\"/tmp/ebpf-incident-file-1029384/readable.conf\"}"
+        },
+        {
+          "sequence": 7,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799422218,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":227,\"flags\":524865,\"path\":\"/tmp/ebpf-incident-file-1029384/private.conf\"}"
+        },
+        {
+          "sequence": 8,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799531835,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":9,\"flags\":524288,\"path\":\"/tmp/ebpf-incident-file-1029384/readable.conf\"}"
+        },
+        {
+          "sequence": 9,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799600384,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":-2,\"latency_us\":11,\"flags\":524288,\"path\":\"/tmp/ebpf-incident-file-1029384/missing.conf\"}"
+        },
+        {
+          "sequence": 10,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799685494,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":-13,\"latency_us\":7,\"flags\":524288,\"path\":\"/tmp/ebpf-incident-file-1029384/private.conf\"}"
+        },
+        {
+          "sequence": 11,
+          "kind": "observation",
+          "timestamp": 1788964833,
+          "data": "{\"timestamp_ns\":3119627799740763,\"pid\":1029384,\"tgid\":1029384,\"uid\":0,\"comm\":\"file-fixture\",\"event_type\":\"file_open\",\"return_code\":3,\"latency_us\":6,\"flags\":720896,\"path\":\"/tmp/ebpf-incident-file-1029384\"}"
+        },
+        {
+          "sequence": 12,
+          "kind": "terminal",
+          "timestamp": 1788964836,
+          "data": "Observation completed and cleanup finished."
+        }
+      ]
+    },
+    {
+      "lab": "07",
+      "sessionId": "41dd2389-f801-4498-8bb8-49f0c9511e70",
+      "events": [
+        {
+          "sequence": 1,
+          "kind": "status",
+          "timestamp": 1788964843,
+          "data": "Runner acquired. Starting a bounded observation."
+        },
+        {
+          "sequence": 2,
+          "kind": "observation",
+          "timestamp": 1788964843,
+          "data": "{\"timestamp_ns\":3119637794382869,\"pid\":1029388,\"tgid\":1029388,\"uid\":0,\"comm\":\"bash\",\"event_type\":\"verifier_demo\",\"syscall_id\":1,\"message\":\"safe bounds-checked write observed\"}"
+        },
+        {
+          "sequence": 3,
+          "kind": "terminal",
+          "timestamp": 1788964846,
+          "data": "Observation completed and cleanup finished."
+        }
+      ]
+    }
+  ]
+}
