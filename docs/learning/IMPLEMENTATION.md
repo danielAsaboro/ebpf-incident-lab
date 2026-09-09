@@ -16,7 +16,7 @@ The browser waits for a terminal event and queries the exact session status. Mal
 
 ## Optional tutor
 
-Set server-only `INCIDENT_TUTOR_API_KEY` and `INCIDENT_TUTOR_MODEL` to enable OpenAI Responses API formative critique. Leave them empty for authored-only operation. The browser requires consent before transmitting reasoning; raw selected evidence is an additional opt-in. Provider calls request `store:false`, but this is not a promise that all provider retention is disabled. Consult applicable provider policies before enabling a participant study.
+Set server-only `GROQ_API_KEY` and `GROQ_MODEL` to enable Groq Chat Completions formative critique. The deployed model is `qwen/qwen3.8-27b`. Leave the variables empty for authored-only operation. The browser requires consent before transmitting reasoning; raw selected evidence is an additional opt-in. Provider handling remains subject to Groq's applicable policies, so consult those policies before enabling a participant study.
 
 The tutor has no tools, runner token, command execution, or mastery authority. Client-selected observations are not independently authenticated by the tutor route. Origin validation, payload bounds, timeout, output cap, and a per-process hourly request limit protect the endpoint. The in-memory limit is per server instance; use deployment-level rate limiting and budget controls before a broad public AI rollout. Provider failure leaves authored hints and saved work usable.
 
